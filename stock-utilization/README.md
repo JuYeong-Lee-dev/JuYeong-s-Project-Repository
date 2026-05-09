@@ -12,18 +12,18 @@ HD Hyundai Marine Solution Europe (HMS-EU) operates a spare parts warehouse in t
 
 ## Solution
 
-A daily automated detection pipeline that:
+A daily automated detection pipeline that identifies **high-value open orders (≥ USD 5,000)** where NL stock is already sufficient for local fulfillment, but the opportunity is being missed.
 
-1. Loads the latest order progress report (`공사진행.xlsx`) into a local PostgreSQL instance
-2. Identifies **high-value orders (≥ USD 5,000)** where:
-   - Delivery condition is EXB (Ex-Basis, NL-fulfillable)
-   - Order type excludes Repair orders and Tech team
-   - NL stock covers ≥ **50%** of order value for HD spare orders (`RKB%`)
-   - NL stock covers ≥ **30%** of order value for main engine spares
-3. Flags a special case: any order containing a specific critical U-CODE item (`U17H2100000`) under EXB terms
-4. Outputs two reports:
-   - **Detail report** — full line-item view for logistics review
-   - **Email summary report** — aggregated per order for daily team communication
+**Filtering logic:**
+- Delivery condition is EXB (Ex-Basis, NL-fulfillable)
+- Excludes Repair orders and Tech team orders
+- NL stock covers ≥ **50%** of order value for HD spare orders (`RKB%`)
+- NL stock covers ≥ **30%** of order value for main engine spares
+- Special case: any order containing critical component `U17H2100000` under EXB terms is always flagged
+
+**Outputs two daily reports:**
+- **Detail report** — full line-item view for logistics review
+- **Email summary** — aggregated per order for daily team communication
 
 ---
 
@@ -34,7 +34,7 @@ A daily automated detection pipeline that:
 | NL Stock Utilization Rate | 20–23% | 25–28% |
 | Stock Turnover | 1.3 | 1.75 |
 
-Findings from this detection are used daily to **transit sales fulfillment from KR to NL**, and to support bonus/promotion decisions tied to NL stock consumption.
+Findings are used daily to **transit sales fulfillment from KR to NL**, and to support bonus/promotion decisions tied to NL stock consumption.
 
 ---
 
@@ -44,37 +44,3 @@ Findings from this detection are used daily to **transit sales fulfillment from 
 - **PostgreSQL** — local instance for SQL-based filtering logic
 - **SQL** — CTE-based filtering with conditional HAVING clauses
 - **Excel I/O** — input from ERP export, output to formatted `.xlsx`
-
----
-
-## Repository Structure
-
-```
-stock-utilization/
-├── 1_stock_utilization_email_report.py   # Aggregated summary for daily email
-├── 2_stock_utilization_detail_report.py  # Full line-item detail for review
-└── README.md
-```
-
----
-
-## How to Use
-
-```bash
-pip install -r requirements.txt
-cp .env.example .env   # then fill in your DB credentials
-```
-
-1. Set `FILE_DATE` to today's date in `YYMMDD` format (e.g., `"260216"`)
-2. Place the ERP export at: `RAW/{FILE_DATE}_공사진행.xlsx`
-3. Ensure PostgreSQL is running locally
-4. Run either script — output saves to the configured output directory
-
----
-
-## Business Logic Notes
-
-- **EXB (Ex-Basis):** Delivery from NL warehouse — the condition this pipeline targets
-- **RKB orders:** HD spare parts with a stricter 50% NL fulfillment threshold
-- **Special case U17H2100000:** A critical engine component flagged regardless of order value thresholds
-- **≥ USD 5,000 filter:** Focuses effort on orders where NL fulfillment has meaningful financial impact
