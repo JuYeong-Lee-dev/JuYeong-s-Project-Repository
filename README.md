@@ -34,7 +34,7 @@ Automated daily pipeline that identifies high-value open orders (≥ USD 5,000) 
 ### [Slow-Moving Stock Detection Pipeline](./slow-moving-stock-detection/)
 `HD Hyundai Marine Solution Europe · Daily operational use`
 
-A three-step daily pipeline that cross-references incoming quote files against the warehouse's slow-moving and excess stock inventory. For each vessel with a total quoted value ≥ USD 10,000, the pipeline detects whether applicable slow-moving items are already in the quote (matched) or could be proposed (applicable). Output drives targeted daily outreach by the sales team to accelerate stock liquidation.
+A three-step daily pipeline that cross-references incoming quote files against the warehouse's slow-moving and excess stock inventory. For each vessel with a total quoted value ≥ USD 10,000, the pipeline detects whether applicable slow-moving items are already in the quote (matched) or could be proposed (applicable). Output became the basis for targeted promotion strategies developed with the sales team, reducing designated slow-moving stock from 100+ items to under 80 — a reduction of over 20%.
 
 `Python · pandas · xlsxwriter · PostgreSQL · SQL`
 
