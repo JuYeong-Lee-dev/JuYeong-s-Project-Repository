@@ -47,4 +47,4 @@ PostgreSQL · CTEs · Set operations · Multi-table JOINs
 
 ---
 
-> Table and column names have been translated from the original Korean ERP schema for readability. No actual data is included.
+> Table and column names have been translated from the original Korean ERP schema for readability. These files contain query logic only — no credentials, connection strings, or company data of any kind.
