@@ -31,6 +31,15 @@ Automated daily pipeline that identifies high-value open orders (≥ USD 5,000) 
 
 ---
 
+### [SQL Analytics](./sql-analytics/)
+`HD Hyundai Marine Solution Europe`
+
+Analytical SQL work built against a PostgreSQL data warehouse covering order history, fulfillment patterns, and customer behaviour. Three analyses: a four-step sequential query identifying which materials should be added to NL revolving stock (ranked by historical Split order frequency); a shipping company demand pattern analysis for high-value account targeting; and a quote-to-order gap analysis surfacing unconverted 2025 opportunities for sales follow-up.
+
+`PostgreSQL · CTEs · Set operations · Multi-table JOINs`
+
+---
+
 ### [Slow-Moving Stock Detection Pipeline](./slow-moving-stock-detection/)
 `HD Hyundai Marine Solution Europe · Daily operational use`
 
