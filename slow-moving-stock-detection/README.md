@@ -42,7 +42,12 @@ Filters the detection scope to European shipping companies only, joining against
 
 ## Impact
 
-This pipeline runs daily and is used to drive targeted outreach — proposing relevant slow-moving items to customers already engaged in active quote discussions, increasing the likelihood of stock liquidation without additional sales effort.
+| Metric | Before | After |
+|---|---|---|
+| Detection process | Manual search through daily quote Excel | Automated daily pipeline |
+| Designated slow-moving item count | 100+ items | Under 80 items (>20% reduction) |
+
+Before this pipeline, identifying applicable slow-moving stock required manually scanning through daily quote files — an effort that was inconsistent and easy to miss. After automating detection, the output was shared with the sales team and became the basis for targeted promotion strategies. The result was a reduction in designated slow-moving stock from over 100 items to under 80, a reduction of more than 20%.
 
 ---
 
