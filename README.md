@@ -53,3 +53,9 @@ A three-step daily pipeline that cross-references incoming quote files against t
 ---
 
 *More projects in progress.*
+
+---
+
+## Note on Privacy & Credentials
+
+All code and queries in this repository have been sanitised for public sharing. Database credentials, internal system names, and personal file paths have been replaced with environment variables or generic placeholders. No actual company data is included — only logic, structure, and methodology.

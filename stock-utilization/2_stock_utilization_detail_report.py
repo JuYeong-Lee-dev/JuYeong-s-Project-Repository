@@ -13,8 +13,8 @@ load_dotenv()
 
 FILE_DATE = "260211"   # ← Change this to today's date (YYMMDD)
 
-INPUT_DIR  = r"C:\Users\HHI\Desktop\DAILY\RAW"
-OUTPUT_DIR = r"C:\Users\HHI\Desktop\DAILY\@재고사용률 개선\재고사용률 OUTPUT"
+INPUT_DIR  = os.getenv("INPUT_DIR",  "input")   # folder containing the daily ERP export
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")  # folder for generated reports
 
 INPUT_FILE  = os.path.join(INPUT_DIR,  f"{FILE_DATE}_공사진행.xlsx")
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, f"{FILE_DATE}_detail_report.xlsx")
