@@ -43,4 +43,8 @@ Finds vessel/material combinations that received a quote in 2025 but resulted in
 
 ## Technical Stack
 
-PostgreSQL · CTEs · Window functions · Set operations · Multi-table JOINs
+PostgreSQL · CTEs · Set operations · Multi-table JOINs
+
+---
+
+> Table and column names have been translated from the original Korean ERP schema for readability. No actual data is included.

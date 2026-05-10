@@ -1,37 +1,27 @@
--- ============================================================
--- Step 2: Within SPLIT orders — identify materials shipped via KR
--- ============================================================
--- Focuses on orders classified as SPLIT in Step 1.
--- Extracts the specific line items that were fulfilled from KR
--- (general stock) rather than NL (revolving stock).
---
--- These materials represent demand that NL stock could not cover —
--- candidates for expanding NL revolving stock holdings.
--- ============================================================
+-- Within SPLIT orders, extract line items fulfilled from KR stock
+-- These are materials NL could not cover — candidates for NL stock expansion
 
 WITH order_classification AS (
     SELECT
-        "수통번호"                          AS order_no,
+        order_no,
         CASE
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '리볼빙' THEN 'NL_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '일반'   THEN 'KR_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") > 1  THEN 'SPLIT'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'NL' THEN 'NL_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'KR' THEN 'KR_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) > 1                               THEN 'SPLIT'
         END AS fulfillment_type
-    FROM "납품현황_정제_분류_완료_final"
+    FROM delivery_history
     WHERE
-        "수통번호" NOT LIKE '%X%'
-        AND "수통번호" NOT LIKE '%W%'
-        AND "수통번호" IS NOT NULL
-        AND "Stock 구분" IN ('리볼빙', '일반')
-        AND (
-            "수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-            OR "수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-            OR "수주유형" LIKE '%General Spare%'
+        order_no NOT LIKE '%X%'
+        AND order_no NOT LIKE '%W%'
+        AND order_no IS NOT NULL
+        AND stock_source IN ('NL', 'KR')
+        AND order_type IN (
+            'Bulk Order - for HIMSEN(Spare)',
+            'Bulk Order - without HIMSEN(Spare)',
+            'General Spare'
         )
-        AND "수주일자" BETWEEN '2021-01-01' AND '2024-12-31'
-    GROUP BY "수통번호"
+        AND order_date BETWEEN '2021-01-01' AND '2024-12-31'
+    GROUP BY order_no
 ),
 
 split_orders AS (
@@ -40,17 +30,16 @@ split_orders AS (
     WHERE fulfillment_type = 'SPLIT'
 )
 
--- KR-fulfilled line items within SPLIT orders
 SELECT *
-FROM "납품현황_정제_분류_완료_final"
+FROM delivery_history
 WHERE
-    "수통번호" IN (SELECT order_no FROM split_orders)
-    AND "Stock 구분" = '일반'           -- KR general stock lines only
-    AND "수통번호" NOT LIKE '%X%'
-    AND "수통번호" NOT LIKE '%W%'
-    AND (
-        "수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-        OR "수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-        OR "수주유형" LIKE '%General Spare%'
+    order_no IN (SELECT order_no FROM split_orders)
+    AND stock_source = 'KR'
+    AND order_no NOT LIKE '%X%'
+    AND order_no NOT LIKE '%W%'
+    AND order_type IN (
+        'Bulk Order - for HIMSEN(Spare)',
+        'Bulk Order - without HIMSEN(Spare)',
+        'General Spare'
     )
-    AND "수주일자" BETWEEN '2021-01-01' AND '2024-12-31';
+    AND order_date BETWEEN '2021-01-01' AND '2024-12-31';

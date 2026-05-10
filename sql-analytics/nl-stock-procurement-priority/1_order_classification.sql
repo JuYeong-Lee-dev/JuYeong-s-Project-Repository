@@ -1,53 +1,41 @@
--- ============================================================
--- Step 1: Classify each order by fulfillment source (2021–2024)
--- ============================================================
--- Each order (수통번호) is classified into one of three types:
---   NL_FULFILLED  → all lines shipped from NL revolving stock
---   KR_FULFILLED  → all lines shipped from KR general stock
---   SPLIT         → lines shipped from both NL and KR stock
---
--- Excludes: cancelled orders (%X%, %W%), repair/tech orders,
---           orders outside the Bulk/General Spare types.
--- ============================================================
+-- Classify each order by fulfillment source: NL_FULFILLED, KR_FULFILLED, or SPLIT
+-- Period: 2021–2024 · Bulk and General Spare orders only
 
 WITH order_classification AS (
     SELECT
-        "수통번호"                          AS order_no,
+        order_no,
         CASE
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '리볼빙' THEN 'NL_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '일반'   THEN 'KR_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") > 1  THEN 'SPLIT'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'NL' THEN 'NL_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'KR' THEN 'KR_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) > 1                               THEN 'SPLIT'
         END AS fulfillment_type
-    FROM "납품현황_정제_분류_완료_final"
+    FROM delivery_history
     WHERE
-        "수통번호" NOT LIKE '%X%'
-        AND "수통번호" NOT LIKE '%W%'
-        AND "수통번호" IS NOT NULL
-        AND "Stock 구분" IN ('리볼빙', '일반')
-        AND (
-            "수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-            OR "수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-            OR "수주유형" LIKE '%General Spare%'
+        order_no NOT LIKE '%X%'
+        AND order_no NOT LIKE '%W%'
+        AND order_no IS NOT NULL
+        AND stock_source IN ('NL', 'KR')
+        AND order_type IN (
+            'Bulk Order - for HIMSEN(Spare)',
+            'Bulk Order - without HIMSEN(Spare)',
+            'General Spare'
         )
-        AND "수주일자" BETWEEN '2021-01-01' AND '2024-12-31'
-    GROUP BY "수통번호"
+        AND order_date BETWEEN '2021-01-01' AND '2024-12-31'
+    GROUP BY order_no
 )
 
--- Join classification back to the full delivery table
 SELECT
-    a.*,
-    b.fulfillment_type
-FROM "납품현황_정제_분류_완료_final" a
-JOIN order_classification b ON a."수통번호" = b.order_no
+    d.*,
+    c.fulfillment_type
+FROM delivery_history d
+JOIN order_classification c USING (order_no)
 WHERE
-    a."수통번호" NOT LIKE '%X%'
-    AND a."수통번호" NOT LIKE '%W%'
-    AND a."Stock 구분" IN ('리볼빙', '일반')
-    AND (
-        a."수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-        OR a."수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-        OR a."수주유형" LIKE '%General Spare%'
+    d.order_no NOT LIKE '%X%'
+    AND d.order_no NOT LIKE '%W%'
+    AND d.stock_source IN ('NL', 'KR')
+    AND d.order_type IN (
+        'Bulk Order - for HIMSEN(Spare)',
+        'Bulk Order - without HIMSEN(Spare)',
+        'General Spare'
     )
-    AND a."수주일자" BETWEEN '2021-01-01' AND '2024-12-31';
+    AND d.order_date BETWEEN '2021-01-01' AND '2024-12-31';

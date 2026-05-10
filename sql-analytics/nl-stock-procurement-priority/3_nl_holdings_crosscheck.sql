@@ -1,87 +1,61 @@
--- ============================================================
--- Step 3: Cross-reference SPLIT/KR materials against NL stock history
--- ============================================================
--- Takes the KR-fulfilled materials from SPLIT orders (Step 2)
--- and checks whether each item has ever been shipped from NL
--- revolving stock in the same period.
---
--- Output flags each material as:
---   'ALREADY IN NL STOCK' → NL has shipped this before; a stocking issue
---   'NOT IN NL STOCK'     → NL has never held this; a procurement gap
---
--- This distinction separates two different problems:
---   1. Items NL holds but couldn't cover (availability/quantity issue)
---   2. Items NL doesn't hold at all (procurement scope issue)
--- ============================================================
+-- Cross-reference SPLIT/KR materials against NL shipping history
+-- Flags each material: ALREADY IN NL STOCK vs NOT IN NL STOCK
 
 WITH order_classification AS (
     SELECT
-        "수통번호"                          AS order_no,
+        order_no,
         CASE
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '리볼빙' THEN 'NL_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") = 1
-                 AND MAX("Stock 구분") = '일반'   THEN 'KR_FULFILLED'
-            WHEN COUNT(DISTINCT "Stock 구분") > 1  THEN 'SPLIT'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'NL' THEN 'NL_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) = 1 AND MAX(stock_source) = 'KR' THEN 'KR_FULFILLED'
+            WHEN COUNT(DISTINCT stock_source) > 1                               THEN 'SPLIT'
         END AS fulfillment_type
-    FROM "납품현황_정제_분류_완료_final"
+    FROM delivery_history
     WHERE
-        "수통번호" NOT LIKE '%X%'
-        AND "수통번호" NOT LIKE '%W%'
-        AND "수통번호" IS NOT NULL
-        AND "Stock 구분" IN ('리볼빙', '일반')
-        AND (
-            "수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-            OR "수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-            OR "수주유형" LIKE '%General Spare%'
+        order_no NOT LIKE '%X%'
+        AND order_no NOT LIKE '%W%'
+        AND order_no IS NOT NULL
+        AND stock_source IN ('NL', 'KR')
+        AND order_type IN (
+            'Bulk Order - for HIMSEN(Spare)',
+            'Bulk Order - without HIMSEN(Spare)',
+            'General Spare'
         )
-        AND "수주일자" BETWEEN '2021-01-01' AND '2024-12-31'
-    GROUP BY "수통번호"
+        AND order_date BETWEEN '2021-01-01' AND '2024-12-31'
+    GROUP BY order_no
 ),
 
--- KR-fulfilled lines in SPLIT orders
 split_kr_materials AS (
-    SELECT DISTINCT a."U Code", a."자재번호", a."소분류 (대)"
-    FROM "납품현황_정제_분류_완료_final" a
-    JOIN order_classification b ON a."수통번호" = b.order_no
-    WHERE b.fulfillment_type = 'SPLIT'
-      AND a."Stock 구분" = '일반'
-      AND a."수통번호" NOT LIKE '%X%'
-      AND a."수통번호" NOT LIKE '%W%'
-      AND (
-          a."수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-          OR a."수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-          OR a."수주유형" LIKE '%General Spare%'
-      )
-      AND a."수주일자" BETWEEN '2021-01-01' AND '2024-12-31'
+    SELECT DISTINCT d.u_code, d.material_no, d.material_subcategory
+    FROM delivery_history d
+    JOIN order_classification c USING (order_no)
+    WHERE
+        c.fulfillment_type = 'SPLIT'
+        AND d.stock_source = 'KR'
+        AND d.order_no NOT LIKE '%X%'
+        AND d.order_no NOT LIKE '%W%'
+        AND d.order_type IN (
+            'Bulk Order - for HIMSEN(Spare)',
+            'Bulk Order - without HIMSEN(Spare)',
+            'General Spare'
+        )
+        AND d.order_date BETWEEN '2021-01-01' AND '2024-12-31'
 ),
 
--- All materials ever shipped from NL revolving stock
-nl_revolving_parts AS (
-    SELECT DISTINCT "U Code", "자재번호", "소분류 (대)"
-    FROM "납품현황_정제_분류_완료_final"
-    WHERE
-        "Stock 구분" = '리볼빙'
-        AND "수통번호" NOT LIKE '%X%'
-        AND "수통번호" NOT LIKE '%W%'
-        AND (
-            "수주유형" LIKE 'Bulk Order - for HIMSEN(Spare)'
-            OR "수주유형" LIKE 'Bulk Order - without HIMSEN(Spare)'
-            OR "수주유형" LIKE '%General Spare%'
-        )
-        AND "수주일자" BETWEEN '2021-01-01' AND '2024-12-31'
+nl_stock_history AS (
+    SELECT DISTINCT u_code, material_no, material_subcategory
+    FROM delivery_history
+    WHERE stock_source = 'NL'
 )
 
--- Cross-reference: flag NL stock status for each SPLIT/KR material
 SELECT DISTINCT
-    s."U Code",
-    s."자재번호",
-    s."소분류 (대)",
+    s.u_code,
+    s.material_no,
+    s.material_subcategory,
     CASE
-        WHEN r."U Code" IS NOT NULL THEN 'ALREADY IN NL STOCK'
+        WHEN n.u_code IS NOT NULL THEN 'ALREADY IN NL STOCK'
         ELSE 'NOT IN NL STOCK'
     END AS nl_stock_status
 FROM split_kr_materials s
-LEFT JOIN nl_revolving_parts r
-    ON COALESCE(s."U Code", s."자재번호") = COALESCE(r."U Code", r."자재번호")
-   AND s."소분류 (대)" = r."소분류 (대)";
+LEFT JOIN nl_stock_history n
+    ON COALESCE(s.u_code, s.material_no) = COALESCE(n.u_code, n.material_no)
+   AND s.material_subcategory = n.material_subcategory;
