@@ -1,4 +1,4 @@
-# JuYeong Lee — Data Portfolio
+# JuYeong Lee Projects
 
 Data analyst with hands-on experience building production ML systems and operational data pipelines in a European MRO supply chain environment. Projects here were designed, built, and deployed in a real business context — not academic exercises.
 
