@@ -4,6 +4,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from sqlalchemy import create_engine, text
 import optuna
+from dotenv import load_dotenv
 
 # Shared evaluation metrics module (must be in the same directory as shared_metrics.py)
 from shared_metrics_en import (
@@ -17,15 +18,9 @@ from shared_metrics_en import (
 warnings.filterwarnings("ignore")
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
+load_dotenv()
 
-
-DB_CONFIG = {
-    "host":     "localhost",
-    "port":     "5432",
-    "dbname":   "HD_DATA",
-    "user":     "postgres",
-    "password": "!Init12345",
-}
+DB_URL = os.environ["DB_URL"]  # Set in .env — see .env.example
 
 SOURCE_TABLE = 'raw."DELIVERY_DATA_FINAL"'
 DATE_START   = "2021-01-01"
@@ -54,10 +49,7 @@ ORDER_TYPES = (
 
 
 def get_engine():
-    c = DB_CONFIG
-    return create_engine(
-        f"postgresql://{c['user']}:{c['password']}@{c['host']}:{c['port']}/{c['dbname']}"
-    )
+    return create_engine(DB_URL)
 
 
 def load_monthly_pivot(engine) -> pd.DataFrame:
